@@ -1,0 +1,10 @@
+Zum Kompilieren der Bibliothek:
+
+	pip install --prefix=$PWD $package_folder/
+
+Die zu importierenden Dateien liegen dann unter:
+
+$PWD/lib/python_xx/site-packages/
+
+
+
