@@ -2,19 +2,16 @@ import sys
 sys.path.append('/vols/fs1/work/weger/PROG/PYTHON/lib/lib/python2.7/site-packages/')
 import numpy as np
 import xml.etree.ElementTree as ET
-from rotkoord import Rotgrid
-import rotkoord
-from  multiprocessing import Pool
 import math
-from pyproj import Proj, transform
 #from lxml import etree as ET
 from shapely.geometry import Polygon, LineString, MultiLineString, MultiPolygon
 from shapely.ops import cascaded_union
 from shapely.geometry.polygon import orient as orient
+
 np.set_printoptions(threshold='inf')
 
 
-#define namespace
+# define namespace
 
 ET.register_namespace('core','http://www.opengis.net/citygml/1.0') 
 ET.register_namespace('bldg', 'http://www.opengis.net/citygml/building/1.0')
@@ -77,7 +74,7 @@ def reconstr_build(build,build_simple):
 	        xvals.append(coord[0])
 		yvals.append(coord[1])
 
-#	print xvals
+        # print xvals
         zground = build_simple.zground
         zroof = build_simple.zroof
 	
@@ -213,7 +210,7 @@ def ground_roof(surfacelist):
 		polygons.append(shape_pol)
 		zvals.append(coords[2])
 
-	#if there are more than 2 horizontal surfaces we have multiple building parts 
+	# if there are more than 2 horizontal surfaces we have multiple building parts 
 	if len(surfacelist)>2:
 		# inspecting the data, we know, that every second horizontal surface is a ground surface
 		groundsrfs  = (polygons[1::2])
@@ -221,12 +218,12 @@ def ground_roof(surfacelist):
 		zroofs = zvals[0::2]
 		zgrounds = zvals[1::2]
 		zground = min(zgrounds)
-		#calculate roof height
+		# calculate roof height
 		areas = []
 		i = 0
 		for roofsrf in list(roofsrfs):
 			area = roofsrf.area
-			#check if a groundsurface has the same height, then subtract it from the roof surface
+			# check if a groundsurface has the same height, then subtract it from the roof surface
 			ind_roof = np.argwhere(np.array(zgrounds) == zroofs[i])
 
 
@@ -244,27 +241,27 @@ def ground_roof(surfacelist):
 		else:
 			zroof= max(zroofs)	
 
-		#use shapely function to merge all ground surfaces to  unified surface
+		# use shapely function to merge all ground surfaces to  unified surface
 		ground_uni = cascaded_union(polygons)
 		#simplify polygon with an error of 0.5m
 		ground_uni = ground_uni.simplify(0.5)
                 if not ground_uni.is_valid:
                         ground_uni = ground_uni.buffer(0)
-		#in case not all surfaces could be merged, redo after simplification
+		# in case not all surfaces could be merged, redo after simplification
 		ground_uni = cascaded_union(ground_uni)
 
-		#check if resulting building is larger than 125m^3 and higher than 5m   
+		# check if resulting building is larger than 125m^3 and higher than 5m   
 
 		if ground_uni.area*(zroof-zground)>125 and zroof-zground>5:
                         coordslist = []
-			#in case not all surfaces could be merged, take the largest as representative
+			# in case not all surfaces could be merged, take the largest as representative
 			boundaries = ground_uni.boundary
         	        if isinstance(boundaries, MultiLineString):
 				areas = []
 				for member in boundaries: 
 					areas.append(Polygon(member).area)
 				ind = areas.index(max(areas))				
-				#ensure ground surface is counter clokwise orientated
+				# ensure ground surface is counter clockwise orientated
 				new_ground = orient(Polygon(boundaries[ind]),1)     
 				new_build = build_simple(new_ground, zground, zroof)
 
